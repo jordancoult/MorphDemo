@@ -28,7 +28,7 @@ plt.gca().axis('off')
 plt.subplot(1,2,1)
 plt.subplots_adjust(bottom=0.25)
 d_background = Drone(M_pl=1, cgx_pl=0,cgy_pl=0)
-d = Drone(M_pl=init_pl_mass, cgx_pl=.3, cgy_pl=.3)
+d = Drone(M_pl=init_pl_mass, cgx_pl=.13, cgy_pl=0)
 main_ax = plt.gca()
 d.pltInfo['first_i'] = True # first drawing of plot info
 
