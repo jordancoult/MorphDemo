@@ -32,15 +32,16 @@ class Drone:
 		self.M_arms = .92*4 # .92kg / full arm assembly
 		self.M_tot = DRONE_MASS + self.M_pl # DRONE_MASSkg for 2 batts / no payload 
 		self.M_bod = self.M_tot - self.M_arms - self.M_pl
-		self.R = .5207 # .5207m
+		self.R = .5207+.0635 # .5207m
 		self.R_armcg = .403 # .403m
 		self.th_deg = init_th_deg
-		self.max_motor_thrust = 7 # kg (KDE 220kv, 50v, dual-blade)
+		self.max_motor_thrust = 7*.9*.8 # 7kg for KDE 220kv, 50v, dual-blade
 		self.batt_Ah = 22 # only 80% of this is used - to simulate reality
 		if not (thrust_ac is None): # if thrust_ac is None, it will do the faster algorithm
 			self.thrust_ac = float(thrust_ac)
 		else:
 			self.thrust_ac = None
+		self.quiet = False
 		# In application, thrusts will be given and we solve for cg_pl. Here, cg_pl is given and we solve for thrusts.
 
 		# Derived Fields
@@ -59,6 +60,12 @@ class Drone:
 		self.stable = None
 
 		self.pltInfo = {}
+
+	def quietMode(self, on=True):
+		self.quiet = on
+
+	def setR(self, r):
+		self.r = R
 
 	def unmorph(self):
 		self.th_deg = [45,45,45,45]
@@ -85,6 +92,8 @@ class Drone:
 		r = 4
 		# Masses
 		M_tot = self.M_pl + self.M_arms + self.M_bod
+		M_tot = round(float(str(M_tot)), 5)
+		self.M_tot = round(float(str(self.M_tot)), 5)		
 		assert (float(str(M_tot)) == float(str(self.M_tot))), "Mass asertion Failed: "+str(M_tot)+" != "+str(self.M_tot)
 		# CG
 		th = rad( self.th_deg )
@@ -182,13 +191,14 @@ class Drone:
 			dist = np.linalg.norm(np.subtract(ct, np.array(cgx,cgy)))
 			converged = (dist < min_dist) or (last_dist == dist) or (i >= 100) # it reaches point, or it reached angle limits, or cg is out of solution set (50 was the max seen 1/7/19)
 			last_dist = dist # if dist wasn't changed, we can't do any better
-		if dist <= min_dist:
-			print(">Morphing successfully converged")
-		else:
-			print(">Morphing could not succesfully converge")
-		print(">Accuracy: "+str(round(1000.*dist,1))+" mm")
-		print( ">Time used: "+str(int(round(1000*(time.time()-start))))+" ms")
-		print(">Iterations: "+str(i))
+		if not self.quiet:
+			if dist <= min_dist:
+				print(">Morphing successfully converged")
+			else:
+				print(">Morphing could not succesfully converge")
+			print(">Accuracy: "+str(round(1000.*dist,1))+" mm")
+			print( ">Time used: "+str(int(round(1000*(time.time()-start))))+" ms")
+			print(">Iterations: "+str(i))
 		#print("MatchCG reached distance "+str(dist)+"m in "+str(i)+" iterations.")
 		return th*(180./np.pi)
 
@@ -199,7 +209,8 @@ class Drone:
 		# Therefore, we use the last thrust as a variable and toggle it to find the argmin of the maximum of the 4 thrusts (2 motors per thrust)
 		if (justCheck is False) and (self.thrust_ac is None):
 			return self.calcThrustsFast()
-		print("Using slow calcthrusts")
+		if not self.quiet:
+			print("Using slow calcthrusts")
 		th = rad(self.th_deg)
 		x = self.R*np.array( [np.cos(th[0]), -np.cos(th[1]), -np.sin(th[2]), np.sin(th[3])] ) # x-coordinates of motors
 		y = self.R*np.array( [np.sin(th[0]), -np.sin(th[1]), np.cos(th[2]), -np.cos(th[3])] ) # y-""    ""
