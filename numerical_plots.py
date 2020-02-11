@@ -177,8 +177,8 @@ def maneuverability1():
 			data_morph[i,:] = round(np.min( 1. - d_morph.thrusts*(1./(7.66*2)) ), 2)
 		i = i+1
 	# Plot Points
-	plt.plot(data_D, data_nonmorph, 'bo',
-		data_D, data_morph, 'go')
+	plt.plot(data_D, data_nonmorph*100, 'bo',
+		data_D, data_morph*100, 'go')
 	plt.legend(('Without Morphing',
 		'With Morphing'), loc='lower left')
 	# Label
@@ -243,6 +243,65 @@ def plotEnvelope():
 	plt.title("Furthest CG That Allows Flight (16kg Drone, "+str(d_static.M_pl)+"kg lopsided payload)")
 	plt.show()
 
+def envelopeGraph():
+	# plot graph of payload weight vs. max safe distance from center for morphing vs non-morphing
+	d = Drone(init_th_deg=[45,45,45,45], cgx_pl=0, cgy_pl=0,
+		M_pl=1, thrust_ac=100)
+	d_morph = Drone(init_th_deg=[75,15,15,75], cgx_pl=0, 
+		cgy_pl=0, M_pl=1, thrust_ac=100)
+	d.quietMode()
+	d_morph.quietMode()
+	print("Starting")
+	dist_acc = .05
+	maxD = 15. # MAKE SURE this is greater than the max distance that would be stable. 8 is max for 1kg
+	masses = np.around( np.array(np.arange(1,15,.6)), 5 )  # (inclusive, exclusive)
+	data_nonmorph = np.zeros([len(masses),1])  # max distance it can do for a certain mass
+	data_morph = np.zeros([len(masses),1])
+	i=0
+	for mass in masses:
+		print('mass: '+str(mass))  # issue: error when setting m=11
+		d.setPL(m=mass)  # set mass
+		d_morph.setPL(m=mass)
+
+		dist_set = maxD
+		to_change = maxD
+		while to_change > dist_acc:  # if last change is > dist_acc
+			to_change = to_change * 0.5
+			d.setPL(0,dist_set)
+			if d.isStable():
+				data_nonmorph[i] = max(data_nonmorph[i], dist_set)
+				dist_set = dist_set + to_change
+			else:
+				dist_set = dist_set - to_change
+
+		dist_set = maxD
+		to_change = maxD
+		while to_change > dist_acc:
+			to_change = to_change * 0.5
+			d_morph.setPL(0,dist_set)
+			d_morph.morph()
+			if d_morph.isStable():
+				data_morph[i] = max(data_morph[i], dist_set)
+				dist_set = dist_set + to_change
+			else:
+				dist_set = dist_set - to_change
+
+		i = i + 1
+
+	# Plot Points
+	plt.plot(masses, data_nonmorph*100, 'b',
+		masses, data_morph*100, 'g')
+	# Create Legend
+	plt.legend(('Without Morphing', 'With Morphing'))
+	# Label
+	plt.ylabel("Distance from Center to CG of Payloads (cm)")
+	plt.xlabel("Combined Mass of Payloads (kg)")
+	plt.title("Safe Placement of Payload CG")
+	plt.xlim([min(masses), max(masses)])
+	plt.ylim([0, (int(max(data_morph))+1)*100])
+	plt.grid()
+	plt.show()
+
 def test():
 	d = Drone(cgx_pl=.49, cgy_pl=.38, M_pl=10,thrust_ac=10000) #.89,.92
 	#d_static = Drone(cgx_pl=0, cgy_pl=0, M_pl=10, thrust_ac=10)
@@ -274,6 +333,9 @@ if __name__=="__main__":
 	#efficiency1()
 	#example_sim()
 	#rpm1()
+	
 	#maneuverability1()
 	#plotEnvelope() #debug: distance log-search algorithm works -- call to checkPL works
-	test()
+	#test()
+	envelopeGraph()
+	#maneuverability1()
