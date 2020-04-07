@@ -10,7 +10,7 @@ from simulator import Drone
 MAX_ANGLE_CHANGE = 30 # max mechanical angle deviation frome normal quadcopter arm position (degrees)
 MIN_ANGLE = 45 - MAX_ANGLE_CHANGE
 MAX_ANGLE = 45 + MAX_ANGLE_CHANGE
-DRONE_MASS = 14
+DRONE_MASS = 15.26
 UNIT_MULT = 100.
 UNITS = 'cm'
 

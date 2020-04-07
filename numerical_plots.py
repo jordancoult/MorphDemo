@@ -243,6 +243,7 @@ def plotEnvelope():
 	plt.title("Furthest CG That Allows Flight (16kg Drone, "+str(d_static.M_pl)+"kg lopsided payload)")
 	plt.show()
 
+#  Plot of payload mass vs distance from center of drone -- for use of safe payload loading
 def envelopeGraph():
 	# plot graph of payload weight vs. max safe distance from center for morphing vs non-morphing
 	d = Drone(init_th_deg=[45,45,45,45], cgx_pl=0, cgy_pl=0,

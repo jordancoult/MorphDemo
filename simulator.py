@@ -11,12 +11,13 @@ import time
 MAX_ANGLE_CHANGE = 30 # max mechanical angle deviation frome normal quadcopter arm position (degrees)
 MIN_ANGLE = 45 - MAX_ANGLE_CHANGE
 MAX_ANGLE = 45 + MAX_ANGLE_CHANGE
-DRONE_MASS = 14
+DRONE_MASS = 15.26  # drone + batteries without payloads
 UNIT_MULT = 100.
 UNITS = 'cm'
 DISCHARGE_CAPACITY = .8
-LOSS = 1.1 # factor multiplied by current draw to approximate loss of efficiency through wire resistance, etc.
+LOSS = 1.#0.491
 NOMINAL_VOLTAGE = 12.*3.7
+# IRL data point: 50v 55A, (2750W)
 
 def rad(th): # convert input (degrees) into radians
 	if type(th) is list:
@@ -291,13 +292,17 @@ class Drone:
 		self.calcEnergyStats()
 
 	# KDE-CF185-DP
-	# input: thrusts of motor pairs (kg) --- output: power of motor pairs (W)
+	# input: thrusts of motor (kg) --- output: power of motor (W)
 	def powerModel(self, kg):
-		return -1.6073*np.power(kg,3) + 29.092*np.power(kg,2) + 42.516*(kg) + 15.204
+		kg = kg*10.  # because of a mistake in the curve fit
+		pwr = -.001*np.power(kg,3) + .2846*np.power(kg,2) + .4893*(kg) + 62.791
+		return pwr/LOSS
 	
-	# input: thrusts of motor pairs (kg) --- output: power of motor pairs (W)
+	# input: thrusts of motor (kg) --- output: power of motor (W)
 	def currentModel(self, kg):
-		return -.0347*np.power(kg,3) + .6296*np.power(kg,2) + .9184*(kg) + .3413
+		kg = kg*10.
+		pwr = -2e-5*np.power(kg,3) + .0062*np.power(kg,2) + .0102*(kg) + 1.3727
+		return pwr/LOSS
 
 	# input: thrusts of motor pair (kg) --- output: average rpm of motor pair (W)
 	#def rpmModel(self, kg):
@@ -306,12 +311,12 @@ class Drone:
 	def calcEnergyStats(self, thrust = None):
 		if thrust is None:
 			thrust = self.thrusts
-		#self.power = np.multiply( self.powerModel(thrust/2.) ,2)
-		#self.power_tot = int(round(sum(self.power)))#*LOSS
-		self.current = np.multiply( self.currentModel(thrust/2.) ,2) * LOSS
+		self.power = np.multiply( self.powerModel(thrust/2.) ,2)
+		self.power_tot = int(round(sum(self.power)))
+		self.current = self.power / NOMINAL_VOLTAGE#np.multiply( self.currentModel(thrust/2.) ,2)
 		self.current_tot = round(sum(self.current), 3)
-		self.power = self.current*NOMINAL_VOLTAGE
-		self.power_tot = self.current_tot*NOMINAL_VOLTAGE
+		#self.power = self.current*NOMINAL_VOLTAGE
+		#self.power_tot = self.current_tot*NOMINAL_VOLTAGE
 		#hover_min = (DISCHARGE_CAPACITY*self.batt_Ah/(self.power_tot/NOMINAL_VOLTAGE))*60. # (Ah/(Watts/Volts))*(min/hour)
 		hover_min = 60.*(DISCHARGE_CAPACITY*self.batt_Ah)/self.current_tot
 		hover_sec = (hover_min%1)*60.
