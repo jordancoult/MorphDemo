@@ -15,7 +15,7 @@ DRONE_MASS = 15.26  # drone + batteries without payloads
 UNIT_MULT = 100.
 UNITS = 'cm'
 DISCHARGE_CAPACITY = .8
-LOSS = 1.#0.491
+LOSS = 0.491
 NOMINAL_VOLTAGE = 12.*3.7
 # IRL data point: 50v 55A, (2750W)
 
