@@ -1,4 +1,8 @@
 #!/usr/bin/env python
+
+# MorphDemo
+# Jordan Coult
+
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Slider, Button, RadioButtons
 import matplotlib.patches as patches
